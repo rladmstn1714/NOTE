@@ -7,7 +7,7 @@ import numpy as np
 
 class FIFO():
     def __init__(self, capacity):
-        self.data = [[], [], []]
+        self.data = [[], []]
         self.capacity = capacity
         pass
 
@@ -18,7 +18,7 @@ class FIFO():
         return len(self.data[0])
 
     def add_instance(self, instance):
-        assert (len(instance) == 3)
+        assert (len(instance) == 2)
 
         if self.get_occupancy() >= self.capacity:
             self.remove_instance()
@@ -35,7 +35,7 @@ class Reservoir(): # Time uniform
 
     def __init__(self, capacity):
         super(Reservoir, self).__init__(capacity)
-        self.data = [[], [], []]
+        self.data = [[], []]
         self.capacity = capacity
         self.counter = 0
 
@@ -76,7 +76,7 @@ class Reservoir(): # Time uniform
 class PBRS():
 
     def __init__(self, capacity):
-        self.data = [[[], [], []] for _ in range(conf.args.opt['num_class'])] #feat, pseudo_cls, domain, cls, loss
+        self.data = [[[], []] for _ in range(conf.args.opt['num_class'])] #feat, pseudo_cls, domain, cls, loss
         self.counter = [0] * conf.args.opt['num_class']
         self.marker = [''] * conf.args.opt['num_class']
         self.capacity = capacity
@@ -96,12 +96,13 @@ class PBRS():
 
         data = self.data
 
-        tmp_data = [[], [], []]
+        tmp_data = [[], []]
         for data_per_cls in data:
-            feats, cls, dls = data_per_cls
+            feats, cls = data_per_cls
+
+
             tmp_data[0].extend(feats)
             tmp_data[1].extend(cls)
-            tmp_data[2].extend(dls)
 
         return tmp_data
 
@@ -119,12 +120,12 @@ class PBRS():
 
     def update_loss(self, loss_list):
         for data_per_cls in self.data:
-            feats, cls, dls, _, losses = data_per_cls
+            feats, cls, losses = data_per_cls
             for i in range(len(losses)):
                 losses[i] = loss_list.pop(0)
 
     def add_instance(self, instance):
-        assert (len(instance) == 5)
+        assert (len(instance) == 4)
         cls = instance[1]
         self.counter[cls] += 1
         is_add = True

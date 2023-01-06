@@ -13,7 +13,7 @@ CIFAR10Opt = {
 
     'file_path': './dataset/CIFAR-10-C',
     'classes': ['airplane', 'automobile', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck'],
-    'num_class': 10,
+    'num_class': 2,
     'severity': 5,
     # 'corruptions': ["shot_noise", "motion_blur", "snow", "pixelate", "gaussian_noise", "defocus_blur",
     #                 "brightness", "fog", "zoom_blur", "frost", "glass_blur", "impulse_noise", "contrast",
@@ -108,7 +108,7 @@ CIFAR100Opt = {
                 'maple', 'oak', 'palm', 'pine', 'willow',
                 'bicycle', 'bus', 'motorcycle', 'pickup truck', 'train',
                 'lawn-mower', 'rocket', 'streetcar', 'tank', 'tractor'],
-    'num_class': 100,
+    'num_class': 2,
     'severity': 5,
     # 'corruptions': ["shot_noise", "motion_blur", "snow", "pixelate", "gaussian_noise", "defocus_blur",
     #                 "brightness", "fog", "zoom_blur", "frost", "glass_blur", "impulse_noise", "contrast",

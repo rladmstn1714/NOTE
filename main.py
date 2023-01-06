@@ -52,11 +52,9 @@ def main():
 
     ################### Hyper parameters #################
 
-    if 'cifar100' in conf.args.dataset:
+    if 'sst2' in conf.args.dataset:
         opt = conf.CIFAR100Opt
-    elif 'cifar10' in conf.args.dataset:
-        opt = conf.CIFAR10Opt
-
+        ##??
     conf.args.opt = opt
     if conf.args.lr:
         opt['learning_rate'] = conf.args.lr
@@ -66,20 +64,15 @@ def main():
     model = None
 
 
-    if conf.args.model == "resnet18":
-        from models import ResNet
-        model = ResNet.ResNet18()
+    if conf.args.model == "bert":
+        from models import Bert
+        model = Bert.transformer()
+        Tokenizer = Bert.tokenizer()
 
     # import modules after setting the seed
-    from data_loader import data_loader as data_loader
-    from learner.dnn import DNN
-    from learner.bn_stats import BN_Stats
-    from learner.onda import ONDA
-    from learner.pseudo_label import PseudoLabel
-    from learner.tent import TENT
+    from Data_loader import data_loader as data_loader
     from learner.note import NOTE
-    from learner.cotta import CoTTA
-    from learner.lame import LAME
+
 
     result_path, checkpoint_path, log_path = get_path()
 
@@ -105,24 +98,12 @@ def main():
         raise NotImplementedError
 
 
-    print('##############Source Data Loading...##############')
-    source_data_loader = data_loader.domain_data_loader(conf.args.dataset, conf.args.src,
-                                                        conf.args.opt['file_path'],
-                                                        batch_size=conf.args.opt['batch_size'],
-                                                        valid_split=0,  # to be used for the validation
-                                                        test_split=0, is_src=True,
-                                                        num_source=conf.args.num_source)
+
 
     print('##############Target Data Loading...##############')
-    target_data_loader = data_loader.domain_data_loader(conf.args.dataset, conf.args.tgt,
-                                                        conf.args.opt['file_path'],
-                                                        batch_size=conf.args.opt['batch_size'],
-                                                        valid_split=0,
-                                                        test_split=0, is_src=False,
-                                                        num_source=conf.args.num_source)
+    target_data_loader = data_loader.datasets_to_dataloader()
 
-    learner = learner_method(model, source_dataloader=source_data_loader,
-                             target_dataloader=target_data_loader, write_path=log_path)
+    learner = learner_method(model,Tokenizer,  target_dataloader=target_data_loader, write_path=log_path)
 
 
 

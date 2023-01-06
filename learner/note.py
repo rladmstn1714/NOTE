@@ -21,7 +21,7 @@ class NOTE(DNN):
                 param.requires_grad = False
         for module in self.net.modules():
 
-            if isinstance(module, nn.BatchNorm1d) or isinstance(module, nn.BatchNorm2d):
+            if isinstance(module,nn.modules.normalization.LayerNorm):
                 # https://pytorch.org/docs/stable/generated/torch.nn.BatchNorm1d.html
 
                 if conf.args.use_learned_stats:
@@ -65,8 +65,8 @@ class NOTE(DNN):
             return FINISHED
 
         # Add a sample
-        feats, cls, dls = self.target_train_set
-        current_sample = feats[current_num_sample - 1], cls[current_num_sample - 1], dls[current_num_sample - 1]
+        feats, label = self.target_train_set
+        current_sample = feats[current_num_sample - 1], label[current_num_sample - 1]
         self.fifo.add_instance(current_sample)#for batch-based inferece
 
         with torch.no_grad():
@@ -77,18 +77,19 @@ class NOTE(DNN):
                 self.mem.add_instance(current_sample)
 
             elif conf.args.memory_type in ['PBRS']:
-                f, c, d = current_sample[0].to(device), current_sample[1].to(device), current_sample[2].to(device)
+                f,c = torch.tensor(current_sample[0]).to(device), current_sample[1].to(device)
 
-                logit = self.net(f.unsqueeze(0))
-                pseudo_cls = logit.max(1, keepdim=False)[1][0]
-                self.mem.add_instance([f, pseudo_cls, d, c, 0])
+                logit = self.net(f)
+                pseudo_cls = logit.logits.argmax(1, keepdim=False)
+                self.mem.add_instance([f, pseudo_cls, c, 0])
 
         if conf.args.use_learned_stats: #batch-free inference
-            self.evaluation_online(current_num_sample, '', [[current_sample[0]], [current_sample[1]], [current_sample[2]]])
+            self.evaluation_online(current_num_sample, '', (current_sample[0],current_sample[1]))
 
         if current_num_sample % conf.args.update_every_x != 0:  # train only when enough samples are collected
             if not (current_num_sample == len(self.target_train_set[
                                                   0]) and conf.args.update_every_x >= current_num_sample):  # update with entire data
+
 
                 self.log_loss_results('train_online', epoch=current_num_sample, loss_avg=self.previous_train_loss)
                 return SKIPPED
@@ -105,7 +106,8 @@ class NOTE(DNN):
         if len(feats) == 1:  # avoid BN error
             self.net.eval()
 
-        feats, _, _ = self.mem.get_memory()
+
+        feats, _= self.mem.get_memory()
         feats = torch.stack(feats)
         dataset = torch.utils.data.TensorDataset(feats)
         data_loader = DataLoader(dataset, batch_size=conf.args.opt['batch_size'],
@@ -116,9 +118,8 @@ class NOTE(DNN):
         for e in range(conf.args.epoch):
 
             for batch_idx, (feats,) in enumerate(data_loader):
-                feats = feats.to(device)
-                preds_of_data = self.net(feats) # update bn stats
-
+                feats = feats.squeeze(1).to(device)
+                preds_of_data = self.net(feats).logits # update bn stats
 
                 if conf.args.no_optim:
                     pass # no optimization
